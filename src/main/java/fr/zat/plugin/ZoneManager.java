@@ -8,6 +8,8 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.TextComponent;
 
 public class ZoneManager {
     private final Main plugin;
@@ -80,16 +82,17 @@ public class ZoneManager {
                     }
                 }
 
-                // Si la zone est complète, arrête la tâche de vérification de la zone
                 if (isComplete) {
                     this.cancel();
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L); // Vérifie toutes les secondes
+        }.runTaskTimer(plugin, 0L, 20L);
     }
 
     private void startCountdown() {
-        if (countdownRunning) return; // Ne pas démarrer un autre compte à rebours si déjà en cours
+        if (countdownRunning) {
+            countdownTask.cancel(); // Annule la tâche précédente si elle est encore en cours
+        }
         countdownRunning = true;
 
         final int countdownTime = 10; // Temps en secondes
@@ -104,9 +107,21 @@ public class ZoneManager {
                     countdownRunning = false;
                     transformToObsidian();
                 } else {
-                    // Envoie le temps restant aux joueurs
+                    // Crée un TextComponent avec des styles personnalisés
+                    TextComponent actionBarMessage = new TextComponent("CHECKPOINT DANS : " + timeLeft + " SECONDES.");
+
+                    // Change la couleur en fonction du temps restant
+                    if (timeLeft <= 3) {
+                        actionBarMessage.setColor(net.md_5.bungee.api.ChatColor.RED);
+                    } else {
+                        actionBarMessage.setColor(net.md_5.bungee.api.ChatColor.YELLOW);
+                    }
+
+                    actionBarMessage.setBold(true);
+
+                    // Envoie le message aux joueurs dans l'Action Bar
                     for (Player player : Bukkit.getOnlinePlayers()) {
-                        player.sendMessage("Temps restant avant transformation: " + timeLeft + " secondes.");
+                        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionBarMessage);
                     }
                     timeLeft--;
                 }
@@ -162,12 +177,13 @@ public class ZoneManager {
             }
         }
 
-        // Envoie un message aux joueurs après la transformation
+        // Efface le message de l'Action Bar pour tous les joueurs
         for (Player player : Bukkit.getOnlinePlayers()) {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
             player.sendMessage("La transformation de la zone en obsidienne est terminée !");
         }
 
-        // Relance la vérification de la zone après la transformation
+        // Relance la vérification de la zone sans afficher le compte à rebours
         startZoneCheck();
     }
 

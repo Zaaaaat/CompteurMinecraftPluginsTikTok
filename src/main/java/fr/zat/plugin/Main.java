@@ -13,7 +13,6 @@ public class Main extends JavaPlugin {
         getCommand("setcorner2").setExecutor(new SetCornerCommand(this, zoneManager, 2));
         getCommand("startgame").setExecutor(new StartGameCommand(this, zoneManager));
 
-        // Enregistre le gestionnaire d'événements
         getServer().getPluginManager().registerEvents(new BlockListener(zoneManager), this);
     }
 
