@@ -2,3 +2,24 @@ name: Compteur
 version: 1.0
 author: Zat
 main: fr.zat.plugin.Main
+api-version: 1.20
+commands:
+  setCorner1:
+    description: Définit le premier coin de la zone
+    usage: /setCorner1
+    permission: compteur.setcorner
+  setCorner2:
+    description: Définit le deuxième coin de la zone
+    usage: /setCorner2
+    permission: compteur.setcorner
+  startGame:
+    description: Lance le timer et vérifie la zone définie
+    usage: /startGame
+    permission: compteur.startgame
+permissions:
+  compteur.setcorner:
+    description: Permet de définir les coins de la zone
+    default: op
+  compteur.startgame:
+    description: Permet de lancer le jeu
+    default: op
