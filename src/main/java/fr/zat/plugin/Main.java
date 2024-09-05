@@ -7,16 +7,18 @@ public class Main extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        zoneManager = new ZoneManager(this);
+        this.zoneManager = new ZoneManager(this);
 
-        // Enregistrement des commandes
-        getCommand("setCorner1").setExecutor(new SetCornerCommand(this, zoneManager, 1));
-        getCommand("setCorner2").setExecutor(new SetCornerCommand(this, zoneManager, 2));
-        getCommand("startGame").setExecutor(new StartGameCommand(this, zoneManager));
+        getCommand("setcorner1").setExecutor(new SetCornerCommand(this, zoneManager, 1));
+        getCommand("setcorner2").setExecutor(new SetCornerCommand(this, zoneManager, 2));
+        getCommand("startgame").setExecutor(new StartGameCommand(this, zoneManager));
+
+        // Enregistre le gestionnaire d'événements
+        getServer().getPluginManager().registerEvents(new BlockListener(zoneManager), this);
     }
 
     @Override
     public void onDisable() {
-        // Gestion de l'arrêt du plugin si nécessaire
+        zoneManager.stopGame();
     }
 }
