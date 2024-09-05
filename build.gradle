@@ -2,18 +2,19 @@ plugins {
     id 'java'
 }
 
-group = 'org.example'
-version = '1.0-SNAPSHOT'
+group 'fr.zat'
+version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
-    testImplementation platform('org.junit:junit-bom:5.10.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
+    compileOnly 'org.spigotmc:spigot:1.20.2-R0.1-SNAPSHOT'
 }
 
-test {
-    useJUnitPlatform()
-}
+sourceCompatibility = targetCompatibility = '17'
+targetCompatibility = '17'
+compileJava.options.encoding = 'UTF-8'
+setLibsDirName('../server/plugins')

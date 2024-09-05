@@ -1,0 +1,5 @@
+name: PluginCompter
+version: 1
+author: Zat
+api-version: 1.20.2
+main: fr.zat.plugin.Main
