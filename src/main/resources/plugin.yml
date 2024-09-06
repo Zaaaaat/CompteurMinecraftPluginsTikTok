@@ -16,10 +16,24 @@ commands:
     description: Lance le timer et vérifie la zone définie
     usage: /startGame
     permission: compteur.startgame
+  configCorner:
+    description: Définit les coins de la zone en cliquant droit sur deux blocs
+    usage: /configCorner
+    permission: compteur.configcorner
+  resetGame:
+    description: Arrête le jeu et réinitialise les coordonnées de la zone
+    usage: /resetGame
+    permission: compteur.resetgame
 permissions:
   compteur.setcorner:
     description: Permet de définir les coins de la zone
     default: op
   compteur.startgame:
     description: Permet de lancer le jeu
+    default: op
+  compteur.configCorner:
+    description: Permet de définir la zone
+    default: op
+  compteur.resetgame:
+    description: Permet d'arrêter le jeu et de réinitialiser les coordonnées de la zone
     default: op

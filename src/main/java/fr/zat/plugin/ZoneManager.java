@@ -11,6 +11,9 @@ import org.bukkit.scheduler.BukkitTask;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ZoneManager {
     private final Main plugin;
     private Location corner1;
@@ -43,50 +46,63 @@ public class ZoneManager {
         }
     }
 
+    public Location getCorner1() {
+        return corner1;
+    }
+
+    public Location getCorner2() {
+        return corner2;
+    }
+
+    public boolean isGameRunning() {
+        return gameRunning;
+    }
+
     private void startZoneCheck() {
         zoneCheckTask = new BukkitRunnable() {
             @Override
             public void run() {
                 if (!gameRunning) return;
 
-                World world = corner1.getWorld();
-                int x1 = Math.min(corner1.getBlockX(), corner2.getBlockX());
-                int x2 = Math.max(corner1.getBlockX(), corner2.getBlockX());
-                int y1 = Math.min(corner1.getBlockY(), corner2.getBlockY());
-                int y2 = Math.max(corner1.getBlockY(), corner2.getBlockY());
-                int z1 = Math.min(corner1.getBlockZ(), corner2.getBlockZ());
-                int z2 = Math.max(corner1.getBlockZ(), corner2.getBlockZ());
-
-                boolean isComplete = true;
-
-                for (int x = x1; x <= x2; x++) {
-                    for (int y = y1; y <= y2; y++) {
-                        for (int z = z1; z <= z2; z++) {
-                            Block block = world.getBlockAt(x, y, z);
-                            if (block.getType().isAir()) {
-                                isComplete = false;
-                                break;
-                            }
-                        }
-                        if (!isComplete) break;
-                    }
-                    if (!isComplete) break;
-                }
+                boolean isComplete = isZoneComplete();
+                boolean isAlreadyObsidian = isZoneTransformedToObsidian();
 
                 for (Player player : Bukkit.getOnlinePlayers()) {
-                    if (isComplete) {
+                    if (isComplete && !isAlreadyObsidian) {
                         player.sendMessage("La zone est complète ! Commencement du compte à rebours.");
                         startCountdown();
-                    } else {
+                    } else if (!isComplete) {
                         player.sendMessage("La zone n'est pas encore complète.");
                     }
                 }
 
-                if (isComplete) {
+                if (isComplete && !isAlreadyObsidian) {
                     this.cancel();
                 }
             }
         }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    private boolean isZoneComplete() {
+        World world = corner1.getWorld();
+        int x1 = Math.min(corner1.getBlockX(), corner2.getBlockX());
+        int x2 = Math.max(corner1.getBlockX(), corner2.getBlockX());
+        int y1 = Math.min(corner1.getBlockY(), corner2.getBlockY());
+        int y2 = Math.max(corner1.getBlockY(), corner2.getBlockY());
+        int z1 = Math.min(corner1.getBlockZ(), corner2.getBlockZ());
+        int z2 = Math.max(corner1.getBlockZ(), corner2.getBlockZ());
+
+        for (int x = x1; x <= x2; x++) {
+            for (int y = y1; y <= y2; y++) {
+                for (int z = z1; z <= z2; z++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (block.getType().isAir()) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private void startCountdown() {
@@ -101,43 +117,71 @@ public class ZoneManager {
 
             @Override
             public void run() {
+                if (isZoneTransformedToObsidian()) {
+                    this.cancel();
+                    countdownRunning = false;
+                    return;
+                }
+
                 if (timeLeft <= 0) {
-                    // Arrête le compte à rebours
                     this.cancel();
                     countdownRunning = false;
                     transformToObsidian();
                 } else {
-                    // Crée un TextComponent avec des styles personnalisés
-                    TextComponent actionBarMessage = new TextComponent("CHECKPOINT DANS : " + timeLeft + " SECONDES.");
-
-                    // Change la couleur en fonction du temps restant
-                    if (timeLeft <= 3) {
-                        actionBarMessage.setColor(net.md_5.bungee.api.ChatColor.RED);
-                    } else {
-                        actionBarMessage.setColor(net.md_5.bungee.api.ChatColor.YELLOW);
-                    }
-
-                    actionBarMessage.setBold(true);
-
-                    // Envoie le message aux joueurs dans l'Action Bar
-                    for (Player player : Bukkit.getOnlinePlayers()) {
-                        player.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionBarMessage);
-                    }
+                    displayCountdownMessage(timeLeft);
                     timeLeft--;
                 }
             }
-        }.runTaskTimer(plugin, 0L, 20L); // 20 ticks = 1 seconde
+        }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    private void displayCountdownMessage(int timeLeft) {
+        TextComponent actionBarMessage = new TextComponent("CHECKPOINT DANS : " + timeLeft + " SECONDES.");
+        actionBarMessage.setColor(timeLeft <= 3 ? net.md_5.bungee.api.ChatColor.RED : net.md_5.bungee.api.ChatColor.YELLOW);
+        actionBarMessage.setBold(true);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, actionBarMessage);
+        }
+    }
+
+    private boolean isZoneTransformedToObsidian() {
+        for (Block block : getBlocksInZone()) {
+            if (block.getType() != Material.OBSIDIAN) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public List<Block> getBlocksInZone() {
+        List<Block> blocks = new ArrayList<>();
+        World world = corner1.getWorld();
+        int x1 = Math.min(corner1.getBlockX(), corner2.getBlockX());
+        int x2 = Math.max(corner1.getBlockX(), corner2.getBlockX());
+        int y1 = Math.min(corner1.getBlockY(), corner2.getBlockY());
+        int y2 = Math.max(corner1.getBlockY(), corner2.getBlockY());
+        int z1 = Math.min(corner1.getBlockZ(), corner2.getBlockZ());
+        int z2 = Math.max(corner1.getBlockZ(), corner2.getBlockZ());
+
+        for (int x = x1; x <= x2; x++) {
+            for (int y = y1; y <= y2; y++) {
+                for (int z = z1; z <= z2; z++) {
+                    blocks.add(world.getBlockAt(x, y, z));
+                }
+            }
+        }
+        return blocks;
     }
 
     public void onBlockBrokenInZone() {
-        // Si un bloc est cassé pendant le compte à rebours, arrête le compte à rebours
         if (countdownRunning) {
             countdownTask.cancel();
             countdownRunning = false;
             for (Player player : Bukkit.getOnlinePlayers()) {
                 player.sendMessage("Un bloc a été cassé dans la zone. Le compte à rebours est annulé !");
             }
-            startZoneCheck(); // Recommence la vérification de la zone
+            startZoneCheck();
         }
     }
 
@@ -160,30 +204,15 @@ public class ZoneManager {
     }
 
     private void transformToObsidian() {
-        World world = corner1.getWorld();
-        int x1 = Math.min(corner1.getBlockX(), corner2.getBlockX());
-        int x2 = Math.max(corner1.getBlockX(), corner2.getBlockX());
-        int y1 = Math.min(corner1.getBlockY(), corner2.getBlockY());
-        int y2 = Math.max(corner1.getBlockY(), corner2.getBlockY());
-        int z1 = Math.min(corner1.getBlockZ(), corner2.getBlockZ());
-        int z2 = Math.max(corner1.getBlockZ(), corner2.getBlockZ());
-
-        for (int x = x1; x <= x2; x++) {
-            for (int y = y1; y <= y2; y++) {
-                for (int z = z1; z <= z2; z++) {
-                    Block block = world.getBlockAt(x, y, z);
-                    block.setType(Material.OBSIDIAN);
-                }
-            }
+        for (Block block : getBlocksInZone()) {
+            block.setType(Material.OBSIDIAN);
         }
 
-        // Efface le message de l'Action Bar pour tous les joueurs
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(""));
             player.sendMessage("La transformation de la zone en obsidienne est terminée !");
         }
 
-        // Relance la vérification de la zone sans afficher le compte à rebours
         startZoneCheck();
     }
 
